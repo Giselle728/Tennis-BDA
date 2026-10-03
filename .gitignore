@@ -1,0 +1,32 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local tooling metadata
+.kilo/
+
+# Generated stream-pipeline output (re-created by src/stream_mining/tennis_match_stream.py)
+data/processed/real_atp_stream_results.json
+data/stream/
+
+# Logs
+*.log

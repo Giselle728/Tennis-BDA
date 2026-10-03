@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Match Analytics & Performance System</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        court: {
+                            green: '#22c55e',
+                            lime: '#84cc16',
+                            clay: '#f97316',
+                            hard: '#38bdf8',
+                            grass: '#10b981',
+                            indoor: '#818cf8',
+                        },
+                        dark: {
+                            bg: '#090d16',
+                            card: '#111827',
+                            border: '#1f2937',
+                            hover: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22c55e;
+        }
+
+        /* Glassmorphism utility */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-hover:hover {
+            border-color: rgba(34, 197, 94, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(34, 197, 94, 0.25);
+        }
+
+        /* Active Nav Styling */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.02) 100%);
+            border-left: 3px solid #22c55e;
+            color: #22c55e;
+        }
+
+        /* Modal backdrop transition */
+        .modal-blur {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-[#090d16] text-gray-100 flex flex-col min-h-screen">
+
+    <div id="app" class="flex flex-1 h-screen overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-[#0d1322] border-r border-slate-800 flex flex-col justify-between shrink-0 transition-all duration-300 z-30 relative">
+            <div>
+                <!-- System Logo / Header -->
+                <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-lime-400 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-baseball font-bold text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-base tracking-wide text-white flex items-center gap-1.5">
+                                MatchAnalytics <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">ATP</span>
+                            </h1>
+                            <p class="text-xs text-slate-400">Tennis Analytics Platform</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+                    <button onclick="switchTab('landing')" id="nav-landing" class="nav-item active w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-house w-5 text-center text-slate-400"></i>
+                        <span>Home</span>
+                    </button>
+
+                    <div class="pt-2 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Tennis Match Analytics</div>
+
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-chart-pie w-5 text-center text-slate-400"></i>
+                        <span>Dashboard</span>
+                    </button>
+
+                    <button onclick="switchTab('player')" id="nav-player" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-user-ninja w-5 text-center text-slate-400"></i>
+                        <span>Players</span>
+                    </button>
+
+                    <button onclick="switchTab('match')" id="nav-match" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-trophy w-5 text-center text-slate-400"></i>
+                        <span>Matches</span>
+                    </button>
+
+                    <button onclick="switchTab('h2h')" id="nav-h2h" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-arrows-split-up-and-left w-5 text-center text-slate-400"></i>
+                        <span>Head-to-Head</span>
+                    </button>
+
+                    <button onclick="openLiveMatches()" id="nav-live" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition">
+                        <i class="fa-solid fa-satellite-dish w-5 text-center text-sky-400"></i>
+                        <span>Live Matches</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer Status -->
+            <div class="p-4 border-t border-slate-800/80 bg-slate-950/40">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ATP Match Data
+                    </span>
+                    <span class="font-mono text-emerald-400 text-[11px]">2019-2024</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-[#090d16]">
+            
+            <!-- Top Bar -->
+            <header class="h-16 border-b border-slate-800/80 bg-[#0d1322]/80 backdrop-blur-md px-6 flex items-center justify-between z-20 shrink-0">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white p-1 focus:outline-none">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div id="page-title-header" class="text-sm font-semibold text-white tracking-wide flex items-center gap-2">
+                        <span>Tennis Analytics</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Quick System Metrics Pill -->
+                    <div class="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-baseball text-sky-400"></i> <span id="header-match-count">&mdash;</span> Matches</span>
+                        <span class="text-slate-700">|</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-calendar-days text-emerald-400"></i> 2019-2024</span>
+                    </div>
+
+                    <!-- Product Label -->
+                    <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-sky-500 p-0.5">
+                            <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center font-bold text-xs text-emerald-400">
+                                TA
+                            </div>
+                        </div>
+                        <span class="text-xs font-medium text-slate-300 hidden md:inline">Tennis Analytics</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic View Viewport -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 relative" id="main-viewport">
+
+                <section id="tab-landing" class="tab-content space-y-8">
+                    <!-- Hero Section -->
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800/80 p-8 md:p-12 glass-card">
+                        <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-1/3 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <div class="relative z-10 max-w-3xl space-y-6">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-wide">
+                                <i class="fa-solid fa-circle-nodes"></i> Tennis Match Analytics Platform
+                            </div>
+                            <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                                Tennis Match Analytics & <span class="bg-gradient-to-r from-emerald-400 via-lime-400 to-sky-400 bg-clip-text text-transparent">Performance Analysis System</span>
+                            </h1>
+                            <p class="text-slate-400 text-base md:text-lg leading-relaxed">
+                                Explore tennis matches, player performance, head-to-head records, and tournament statistics.
+                            </p>
+
+                            <div class="flex flex-wrap items-center gap-4 pt-2">
+                                <button onclick="switchTab('dashboard')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-0.5">
+                                    <i class="fa-solid fa-gauge-high mr-2"></i> Launch Main Dashboard
+                                </button>
+                                <button onclick="showGuestAuthToast()" class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white text-xs font-medium transition">
+                                    <i class="fa-solid fa-key mr-1.5"></i> Guest Quick Auth
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tennis Feature Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Player Performance</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Explore player wins, win rates, seasonal performance, and career statistics.
+                            </p>
+                        </div>
+
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-xl">
+                                <i class="fa-solid fa-baseball"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Match Analytics</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Browse historical matches with tournament, surface, score, round, and player details.
+                            </p>
+                        </div>
+
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xl">
+                                <i class="fa-solid fa-arrows-split-up-and-left"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Head-to-Head</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Compare two players using their actual recorded meetings and results.
+                            </p>
+                        </div>
+
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Surface Analysis</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Explore how players and matches perform across hard, clay, and grass courts.
+                            </p>
+                        </div>
+
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Tournament Insights</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Analyze tournament-level match activity and duration statistics.
+                            </p>
+                        </div>
+
+                        <div class="glass-card glass-card-hover p-6 rounded-2xl space-y-3 border border-slate-800">
+                            <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-xl">
+                                <i class="fa-solid fa-satellite-dish"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Live Matches</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Check current ATP match availability and live match status.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Data Coverage -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Data Coverage:</div>
+                            <div class="flex flex-wrap items-center gap-4 font-mono text-sm" id="landing-coverage">
+                                <span class="text-slate-400">Loading dataset summary&hellip;</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                                <!-- ============================================================
+                     MAIN DASHBOARD  (real data from /api/dashboard/*)
+                     ============================================================ -->
+                <section id="tab-dashboard" class="tab-content hidden space-y-6">
+
+                    <!-- Dashboard Header -->
+                    <div class="glass-card p-6 md:p-7 rounded-2xl border border-slate-800/80 relative overflow-hidden">
+                        <div class="absolute -top-24 -right-16 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <div class="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono">
+                                        <i class="fa-solid fa-baseball mr-1"></i> ATP Match Data
+                                    </span>
+                                    <span id="dash-status-badge" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[11px] font-mono flex items-center gap-1.5">
+                                        <span id="dash-status-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        <span id="dash-status-text">Loading dataset&hellip;</span>
+                                    </span>
+                                </div>
+
+                                <h2 class="mt-3 text-2xl md:text-3xl font-extrabold text-white tracking-tight">Tennis Analytics Dashboard</h2>
+                                <p class="mt-1.5 text-sm text-slate-400">Explore historical match data, player performance, and tennis statistics.</p>
+                                <p id="dash-dataset-meta" class="mt-3 text-[11px] font-mono text-slate-500">&mdash;</p>
+                            </div>
+
+                            <div class="flex items-center gap-3 shrink-0">
+                                <div class="text-right">
+                                    <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last refreshed</div>
+                                    <div id="dash-last-refresh" class="text-xs font-mono text-slate-300">&mdash;</div>
+                                </div>
+                                <button onclick="renderDashboard()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-white transition flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div class="glass-card p-5 rounded-2xl border border-slate-800/80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Matches</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-baseball"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-total-matches" class="mt-3 text-3xl font-extrabold text-white font-mono">&mdash;</div>
+                            <div id="kpi-total-matches-note" class="mt-1 text-[11px] text-slate-400 leading-relaxed">Loading&hellip;</div>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl border border-slate-800/80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Unique Players</span>
+                                <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-unique-players" class="mt-3 text-3xl font-extrabold text-white font-mono">&mdash;</div>
+                            <div id="kpi-unique-players-note" class="mt-1 text-[11px] text-slate-400 leading-relaxed">Loading&hellip;</div>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl border border-slate-800/80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tournaments</span>
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-trophy"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-tournaments" class="mt-3 text-3xl font-extrabold text-white font-mono">&mdash;</div>
+                            <div id="kpi-tournaments-note" class="mt-1 text-[11px] text-slate-400 leading-relaxed">Loading&hellip;</div>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl border border-slate-800/80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Surfaces</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-surfaces" class="mt-3 text-3xl font-extrabold text-white font-mono">&mdash;</div>
+                            <div id="kpi-surfaces-note" class="mt-1 text-[11px] text-slate-400 leading-relaxed">Loading&hellip;</div>
+                        </div>
+                    </div>
+
+                    <!-- Matches by Surface + Top Players by Wins -->
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- Matches by Surface -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-white">Matches by Surface</h3>
+                                    <p class="text-xs text-slate-400">Historical ATP matches by court surface</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-mono text-emerald-400 border border-slate-700 shrink-0">Historical Data</span>
+                            </div>
+
+                            <div class="h-56 w-full relative mt-4">
+                                <canvas id="chart-dashboard-surface"></canvas>
+                            </div>
+
+                            <div id="surface-legend" class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5"></div>
+                        </div>
+
+                        <!-- Top Players by Wins -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-white">Top Players by Wins</h3>
+                                    <p class="text-xs text-slate-400">Players with the most match wins in the dataset</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-mono text-amber-400 border border-slate-700 shrink-0">Top 10</span>
+                            </div>
+
+                            <div id="top-players-list" class="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+
+                            <p class="mt-4 text-[11px] text-slate-500 leading-relaxed">
+                                Ranked by number of matches won. This is participation volume only and is not a ranking of player quality.
+                            </p>
+                        </div>
+                    </div>
+
+
+                    <!-- Recent Activity + Live ATP Status -->
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <!-- Recent Activity -->
+                        <div class="xl:col-span-2 glass-card p-6 rounded-2xl border border-slate-800 flex flex-col">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-white">Recent Matches</h3>
+                                    <p class="text-xs text-slate-400">Latest recorded matches from the dataset</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-mono text-emerald-400 border border-slate-700 shrink-0">Newest 15</span>
+                            </div>
+
+                            <div class="mt-4 -mx-2 overflow-x-auto flex-1">
+                                <div class="min-w-[620px] max-h-80 overflow-y-auto pr-1">
+                                    <table class="w-full text-xs">
+                                        <thead class="sticky top-0 bg-[#111827] text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-800 z-10">
+                                            <tr>
+                                                <th class="text-left px-2 py-2">Winner</th>
+                                                <th class="text-left px-2 py-2">Opponent</th>
+                                                <th class="text-left px-2 py-2">Tournament</th>
+                                                <th class="text-left px-2 py-2">Surface</th>
+                                                <th class="text-left px-2 py-2">Score</th>
+                                                <th class="text-left px-2 py-2">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recent-events-body" class="divide-y divide-slate-800/60 text-slate-300">
+                                            <tr>
+                                                <td colspan="6" class="px-2 py-6 text-center text-slate-500">Loading matches&hellip;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live ATP Status -->
+                        <div id="dashboard-live-card" class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col justify-between scroll-mt-4">
+                            <div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h3 class="text-base font-bold text-white">Live ATP Matches</h3>
+                                        <p class="text-xs text-slate-400">Current ATP match availability</p>
+                                    </div>
+                                    <span id="live-badge" class="px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-mono text-slate-400 border border-slate-700 flex items-center gap-1.5 shrink-0">
+                                        <span id="live-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        <span id="live-badge-text">Polling</span>
+                                    </span>
+                                </div>
+
+                                <div id="live-status-block" class="mt-5 p-4 rounded-xl bg-slate-900/70 border border-slate-800 text-xs">
+                                    <div class="flex items-start gap-2.5">
+                                        <i class="fa-solid fa-satellite-dish text-sky-400 mt-0.5"></i>
+                                        <div>
+                                            <div id="live-message" class="font-medium text-white leading-relaxed">&mdash;</div>
+                                            <p class="mt-1 text-[11px] text-slate-400">No live ATP matches is a normal result when no ATP match is currently in progress.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 mt-4 text-xs font-mono">
+                                    <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                                        <div class="text-[10px] text-slate-500 uppercase">Live matches</div>
+                                        <div id="live-event-count" class="mt-0.5 text-lg font-bold text-white">&mdash;</div>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                                        <div class="text-[10px] text-slate-500 uppercase">Last checked</div>
+                                        <div id="live-interval" class="mt-0.5 text-lg font-bold text-slate-300">&mdash;</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                </section>
+
+
+
+                <section id="tab-player" class="tab-content hidden space-y-6">
+                    <!-- Player Selector Control Header -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-600 flex items-center justify-center text-2xl font-bold text-emerald-400 shadow-md">
+                                <i class="fa-solid fa-user-ninja"></i>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Player Profile</label>
+                                <select id="player-selector" onchange="onPlayerSelected(this.value)" class="mt-1 block w-full md:w-64 bg-slate-900 border border-slate-700 text-white font-semibold text-lg rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500 transition">
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="player-header-meta" class="flex flex-wrap items-center gap-4 text-xs font-mono">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Overview Player Stats Grid -->
+                    <div id="player-kpi-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Populated via JS -->
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Win % Trend Chart -->
+                        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                            <div class="mb-4 flex items-center justify-between">
+                                <h3 id="player-history-title" class="text-base font-bold text-white">Performance Trajectory</h3>
+                                <span class="text-xs text-slate-400 font-mono">Win % Per Season</span>
+                            </div>
+                            <div class="h-64 w-full relative">
+                                <canvas id="chart-player-history"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Player Attribute Radar Chart -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-white">Attribute Vector</h3>
+                                <p class="text-xs text-slate-400">Service, break-point and win-rate metrics</p>
+                            </div>
+                            <div class="h-64 w-full relative flex items-center justify-center">
+                                <canvas id="chart-player-radar"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Surface Performance Table & Chart -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="text-base font-bold text-white">Surface Win Rate Breakdown</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900 text-slate-400 font-mono uppercase">
+                                    <tr>
+                                        <th class="p-3 rounded-l-lg">Surface</th>
+                                        <th class="p-3">Matches Played</th>
+                                        <th class="p-3">Wins</th>
+                                        <th class="p-3">Losses</th>
+                                        <th class="p-3 rounded-r-lg">Win Rate %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="player-surface-table-body" class="divide-y divide-slate-800 font-mono text-slate-200">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-match" class="tab-content hidden space-y-6">
+                    <!-- Search & Filter Controls -->
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="text-xs text-slate-400 font-semibold mb-1 block">Filter Year</label>
+                            <select id="match-filter-year" onchange="onMatchFilterChange()" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="ALL">All Years</option>
+                                <!-- Years populated from /api/matches filter_options -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-slate-400 font-semibold mb-1 block">Filter Surface</label>
+                            <select id="match-filter-surface" onchange="onMatchFilterChange()" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="ALL">All Surfaces</option>
+                                <!-- Surfaces populated from /api/matches filter_options -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-slate-400 font-semibold mb-1 block">Tournament</label>
+                            <select id="match-filter-tournament" onchange="onMatchFilterChange()" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="ALL">All Tournaments</option>
+                                <!-- Tournaments populated from /api/matches filter_options -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-slate-400 font-semibold mb-1 block">Search Player</label>
+                            <input type="text" id="match-search-input" onkeyup="onMatchFilterChange()" placeholder="e.g. Djokovic..." class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Match Data Table -->
+                    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+                        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-list text-emerald-400"></i> Match Records Database
+                            </h3>
+                            <span id="match-count-badge" class="text-xs text-slate-400 font-mono">Showing 0 matches</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900/80 text-slate-400 font-mono uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3.5">Date</th>
+                                        <th class="p-3.5">Tournament</th>
+                                        <th class="p-3.5">Surface</th>
+                                        <th class="p-3.5">Winner</th>
+                                        <th class="p-3.5">Loser</th>
+                                        <th class="p-3.5">Score</th>
+                                        <th class="p-3.5 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="match-table-body" class="divide-y divide-slate-800/60 font-mono text-slate-200">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination: one page of rows at a time -->
+                        <div class="p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <span id="match-page-info" class="text-xs text-slate-400 font-mono">Page 1 of 1</span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="match-prev-page" onclick="gotoMatchPage(-1)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold text-[11px] border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                                </button>
+                                <button type="button" id="match-next-page" onclick="gotoMatchPage(1)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold text-[11px] border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-h2h" class="tab-content hidden space-y-6">
+                    <!-- H2H Selector Bar -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                        <div class="md:col-span-2">
+                            <label class="text-xs text-slate-400 uppercase font-semibold block mb-1">Player 1</label>
+                            <select id="h2h-player1" onchange="renderH2H()" class="w-full bg-slate-900 border border-slate-700 text-white font-bold rounded-xl p-3 focus:outline-none focus:border-emerald-500">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+
+                        <div class="text-center font-extrabold text-2xl text-emerald-400 italic">
+                            VS
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="text-xs text-slate-400 uppercase font-semibold block mb-1">Player 2</label>
+                            <select id="h2h-player2" onchange="renderH2H()" class="w-full bg-slate-900 border border-slate-700 text-white font-bold rounded-xl p-3 focus:outline-none focus:border-sky-500">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- H2H Comparison Hero Card -->
+                    <div id="h2h-hero-card" class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
+                        <!-- JS Injected -->
+                    </div>
+
+                    <!-- Recent Meetings -->
+                    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+                        <div class="p-4 border-b border-slate-800 flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-sky-400"></i> Recent Meetings
+                            </h3>
+                            <span class="text-xs text-slate-400 font-mono">Latest first</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900/80 text-slate-400 font-mono uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3.5">Tournament</th>
+                                        <th class="p-3.5">Year</th>
+                                        <th class="p-3.5">Surface</th>
+                                        <th class="p-3.5">Round</th>
+                                        <th class="p-3.5">Winner</th>
+                                        <th class="p-3.5">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="h2h-matches-body" class="divide-y divide-slate-800/60 font-mono text-slate-200">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Surface H2H Split Table -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="text-base font-bold text-white">Head-to-Head Surface Split</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-mono">
+                                <thead class="bg-slate-900 text-slate-400 uppercase">
+                                    <tr>
+                                        <th class="p-3">Surface</th>
+                                        <th class="p-3">Total Encounters</th>
+                                        <th class="p-3 text-emerald-400" id="h2h-th-p1">Player 1 Wins</th>
+                                        <th class="p-3 text-sky-400" id="h2h-th-p2">Player 2 Wins</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="h2h-surface-table-body" class="divide-y divide-slate-800 text-slate-200">
+                                    <!-- JS Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="match-modal" class="fixed inset-0 bg-slate-950/80 modal-blur z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 shadow-2xl relative">
+            <button onclick="closeMatchModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="border-b border-slate-800 pb-4">
+                <span id="modal-tournament-badge" class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono">&mdash;</span>
+                <h3 class="text-xl font-extrabold text-white mt-2" id="modal-match-title">&mdash;</h3>
+                <p class="text-xs text-slate-400 mt-1" id="modal-match-score">&mdash;</p>
+            </div>
+
+            <!-- Side by Side Metrics -->
+            <div id="modal-stats-container" class="space-y-3 font-mono text-xs">
+                <!-- JS Injected -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Active Chart instances cache
+        let activeCharts = {};
+
+        // Application State
+        let appState = {
+            currentTab: 'landing',
+            selectedPlayer: null
+        };
+
+        function switchTab(tabId) {
+            appState.currentTab = tabId;
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show target tab
+            const targetEl = document.getElementById(`tab-${tabId}`);
+            if (targetEl) targetEl.classList.remove('hidden');
+
+            // Update nav active styles
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            const activeNavBtn = document.getElementById(`nav-${tabId}`);
+            if (activeNavBtn) activeNavBtn.classList.add('active');
+
+            // Update top bar title
+            const pageTitles = {
+                'landing': 'Home',
+                'dashboard': 'Main Analytics Dashboard',
+                'player': 'Player Deep Performance Analysis',
+                'match': 'Historical Match Records & Search',
+                'h2h': 'Head-to-Head Rivalry Analysis',
+            };
+            document.getElementById('page-title-header').innerText = pageTitles[tabId] || 'Tennis Match Analytics';
+
+            // Trigger specific tab renders
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'landing') renderLandingCoverage();
+            if (tabId === 'player') renderPlayerAnalysis();
+            if (tabId === 'match') renderMatchTable();
+            if (tabId === 'h2h') renderH2H();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-ml-64');
+        }
+
+        // "Live Matches" opens the Live ATP Status panel on the Dashboard, which is
+        // backed by /api/dashboard/live (live metrics + live events). No separate
+        // Live Matches page exists yet, and no live data is faked when the API
+        // returns zero ATP matches.
+        function openLiveMatches() {
+            switchTab('dashboard');
+            const card = document.getElementById('dashboard-live-card');
+            if (!card) return;
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('ring-1', 'ring-sky-500/50');
+            setTimeout(() => card.classList.remove('ring-1', 'ring-sky-500/50'), 1800);
+        }
+
+        function showGuestAuthToast() {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-5 right-5 bg-emerald-500 text-slate-950 font-bold px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2 animate-bounce";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> Authenticated as Guest Analyst! Redirecting...`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+                switchTab('dashboard');
+            }, 1200);
+        }
+
+        // ============================================================
+        // DASHBOARD API DATA LAYER (Real data from /api/dashboard/*)
+        // ============================================================
+
+        const DASH_API = '/api/dashboard';
+
+        function dashEl(id) {
+            return document.getElementById(id);
+        }
+
+        function fmtNum(n) {
+            if (n === null || n === undefined || n === '') return '&mdash;';
+            return Number(n).toLocaleString('en-US');
+        }
+
+        function fmtDateTime(str) {
+            if (!str) return '&mdash;';
+            return String(str).replace('T', ' ').slice(0, 19);
+        }
+
+        function fmtDateOnly(str) {
+            if (!str) return '&mdash;';
+            return String(str).replace('T', ' ').slice(0, 10);
+        }
+
+        async function fetchDash(endpoint) {
+            const res = await fetch(`${DASH_API}${endpoint}`);
+            if (!res.ok) {
+                throw new Error(`API ${endpoint} responded with status ${res.status}`);
+            }
+            return await res.json();
+        }
+
+        function setDashStatus(state, text) {
+            const dot = dashEl('dash-status-dot');
+            const txt = dashEl('dash-status-text');
+            const badge = dashEl('dash-status-badge');
+            if (!dot || !txt || !badge) return;
+
+            txt.innerHTML = text;
+            if (state === 'ok') {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                badge.className = 'px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono flex items-center gap-1.5';
+            } else if (state === 'loading') {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
+                badge.className = 'px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-mono flex items-center gap-1.5';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400';
+                badge.className = 'px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-mono flex items-center gap-1.5';
+            }
+        }
+
+        function renderDashKpis(overview) {
+            const k = overview.kpis || {};
+            const notes = overview.kpi_notes || {};
+
+            if (dashEl('kpi-total-matches')) dashEl('kpi-total-matches').innerHTML = fmtNum(k.total_matches);
+            if (dashEl('kpi-total-matches-note')) dashEl('kpi-total-matches-note').innerHTML = 'Recorded matches across all seasons';
+
+            if (dashEl('kpi-unique-players')) dashEl('kpi-unique-players').innerHTML = fmtNum(k.unique_players);
+            if (dashEl('kpi-unique-players-note')) dashEl('kpi-unique-players-note').innerHTML = 'Players with at least one recorded match';
+
+            if (dashEl('kpi-tournaments')) dashEl('kpi-tournaments').innerHTML = fmtNum((overview.collection_counts || {}).tournament_analysis);
+            if (dashEl('kpi-tournaments-note')) dashEl('kpi-tournaments-note').innerHTML = 'Tournaments covered by the dataset';
+
+            if (dashEl('kpi-surfaces')) dashEl('kpi-surfaces').innerHTML = fmtNum(k.surfaces);
+            if (dashEl('kpi-surfaces-note')) dashEl('kpi-surfaces-note').innerHTML = notes.surfaces || '';
+
+            const headerCount = document.getElementById('header-match-count');
+            if (headerCount) headerCount.textContent = fmtNum(k.total_matches);
+
+            const ds = overview.dataset || {};
+            if (dashEl('dash-dataset-meta')) {
+                const f = fmtDateOnly(ds.first_timestamp);
+                const l = fmtDateOnly(ds.last_timestamp);
+                dashEl('dash-dataset-meta').innerHTML = `Matches: <span class="text-emerald-400 font-semibold">${fmtNum(k.total_matches)}</span> &middot; Players: <span class="text-slate-300 font-semibold">${fmtNum(k.unique_players)}</span> &middot; Date range: <span class="text-slate-300">${f} &rarr; ${l}</span> &middot; <span class="text-slate-500">2019-2024 seasons</span>`;
+            }
+        }
+
+        // Data coverage shown on the landing page, read from the same
+        // overview endpoint the Dashboard uses (nothing is hardcoded).
+        async function renderLandingCoverage() {
+            const container = document.getElementById('landing-coverage');
+            if (!container) return;
+
+            try {
+                const overview = await fetchDash('/overview');
+                const k = overview.kpis || {};
+                const counts = overview.collection_counts || {};
+                const range = `${fmtDateOnly(overview.dataset?.first_timestamp)} \u2192 ${fmtDateOnly(overview.dataset?.last_timestamp)}`;
+
+                const headerCount = document.getElementById('header-match-count');
+                if (headerCount) headerCount.textContent = fmtNum(k.total_matches);
+
+                container.innerHTML = [
+                    `<span class="text-emerald-400">${fmtNum(k.total_matches)}</span> <span class="text-slate-500">matches</span>`,
+                    `<span class="text-sky-400">${fmtNum(k.unique_players)}</span> <span class="text-slate-500">players</span>`,
+                    `<span class="text-purple-400">${fmtNum(counts.tournament_analysis)}</span> <span class="text-slate-500">tournaments</span>`,
+                    `<span class="text-amber-400">${fmtNum(k.surfaces)}</span> <span class="text-slate-500">surfaces</span>`,
+                    `<span class="text-slate-400">${range}</span>`
+                ].join('<span class="text-slate-700">|</span>');
+            } catch (err) {
+                container.innerHTML = '<span class="text-slate-500">Dataset summary unavailable</span>';
+            }
+        }
+
+        function renderDashSurfaces(surfacesData) {
+            const list = surfacesData.matches_by_surface || [];
+            const colors = {
+                Hard: '#38bdf8',
+                Clay: '#f97316',
+                Grass: '#10b981',
+                Indoor: '#818cf8',
+                Carpet: '#a78bfa'
+            };
+
+            const labels = list.map(item => item.surface);
+            const data = list.map(item => item.match_count);
+            const bgColors = labels.map(lbl => colors[lbl] || '#94a3b8');
+
+            const total = data.reduce((a, b) => a + b, 0);
+
+            // Chart.js Doughnut
+            destroyChart('dashboard-surface');
+            const canvas = document.getElementById('chart-dashboard-surface');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                activeCharts['dashboard-surface'] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: bgColors,
+                            borderWidth: 0,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.raw || 0;
+                                        const pct = total ? ((val / total) * 100).toFixed(1) : 0;
+                                        return ` ${context.label}: ${fmtNum(val)} matches (${pct}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '68%'
+                    }
+                });
+            }
+
+            // Legend rows
+            const legendEl = dashEl('surface-legend');
+            if (legendEl) {
+                legendEl.innerHTML = list.map(item => {
+                    const pct = total ? ((item.match_count / total) * 100).toFixed(1) : 0;
+                    const c = colors[item.surface] || '#94a3b8';
+                    return `
+                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${c}"></span>
+                                <span class="font-medium text-white">${item.surface}</span>
+                            </span>
+                            <span class="font-mono text-slate-300 font-bold">${fmtNum(item.match_count)} <span class="text-slate-500 font-normal text-[10px]">(${pct}%)</span></span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+
+        function renderDashTopPlayers(playersData) {
+            const list = playersData.top_players || [];
+            const container = dashEl('top-players-list');
+            if (!container) return;
+
+            if (!list.length) {
+                container.innerHTML = `<div class="p-3 text-center text-xs text-slate-500">No players found</div>`;
+                return;
+            }
+
+            const maxWins = list[0]?.win_count || 1;
+
+            container.innerHTML = list.map((p, idx) => {
+                const pct = Math.round((p.win_count / maxWins) * 100);
+                const isTop3 = idx < 3;
+                const badgeColor = idx === 0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                   idx === 1 ? 'bg-slate-300/20 text-slate-200 border-slate-300/30' :
+                                   idx === 2 ? 'bg-amber-700/20 text-amber-500 border-amber-700/30' :
+                                               'bg-slate-800 text-slate-400 border-slate-700';
+                return `
+                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition flex items-center gap-3">
+                        <span class="w-6 h-6 rounded-lg ${badgeColor} border text-[11px] font-mono font-bold flex items-center justify-center shrink-0">
+                            ${idx + 1}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center text-xs mb-1">
+                                <span class="font-medium text-white truncate">${p.player_name}</span>
+                                <span class="font-mono text-amber-400 font-bold ml-2 shrink-0">${fmtNum(p.win_count)} <span class="text-[10px] text-slate-500 font-normal">wins</span></span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-amber-500 to-emerald-400 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+        function renderDashRecentEvents(recentData) {
+            // The stream store holds one MATCH_WIN and one MATCH_LOSS row
+            // per match; only the winner row is shown here, so the table
+            // lists real matches instead of internal events.
+            const list = (recentData.events || []).filter(ev => ev.event_type === 'MATCH_WIN');
+            const tbody = dashEl('recent-events-body');
+            if (!tbody) return;
+
+            if (!list.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-2 py-6 text-center text-slate-500">No recent matches found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(ev => `
+                    <tr class="hover:bg-slate-900/60 transition">
+                        <td class="px-2 py-2 font-medium text-emerald-400 truncate max-w-[130px]">${ev.player || '&mdash;'}</td>
+                        <td class="px-2 py-2 text-slate-400 truncate max-w-[130px]">${ev.opponent || '&mdash;'}</td>
+                        <td class="px-2 py-2 text-slate-400 truncate max-w-[140px]">${ev.tournament || '&mdash;'}</td>
+                        <td class="px-2 py-2 font-mono text-slate-400">${ev.surface || '&mdash;'}</td>
+                        <td class="px-2 py-2 font-mono text-slate-400">${ev.score || '&mdash;'}</td>
+                        <td class="px-2 py-2 font-mono text-slate-500 text-[11px] whitespace-nowrap">${fmtDateOnly(ev.timestamp)}</td>
+                    </tr>
+                `).join('');
+        }
+
+
+        function renderDashLiveStatus(liveData) {
+            const msgEl = dashEl('live-message');
+            const cntEl = dashEl('live-event-count');
+            const intEl = dashEl('live-interval');
+            const dotEl = dashEl('live-dot');
+            const textEl = dashEl('live-badge-text');
+            const badgeEl = dashEl('live-badge');
+
+            if (msgEl) msgEl.innerHTML = liveData.message || 'No live ATP matches currently available';
+            if (cntEl) cntEl.innerHTML = fmtNum(liveData.event_count || 0);
+            if (intEl) intEl.innerHTML = fmtDateTime(liveData.pipeline?.last_update);
+
+            if (liveData.has_live_matches) {
+                if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+                if (textEl) textEl.innerText = 'Live now';
+                if (badgeEl) badgeEl.className = 'px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono flex items-center gap-1.5 shrink-0';
+            } else {
+                if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
+                if (textEl) textEl.innerText = 'No live matches';
+                if (badgeEl) badgeEl.className = 'px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[11px] font-mono flex items-center gap-1.5 shrink-0';
+            }
+        }
+
+        async function renderDashboard() {
+            setDashStatus('loading', 'Refreshing dataset&hellip;');
+
+            try {
+                const [overview, surfaces, players, recent, live] = await Promise.all([
+                    fetchDash('/overview'),
+                    fetchDash('/surfaces'),
+                    fetchDash('/top-players?limit=10'),
+                    fetchDash('/recent-events?limit=15'),
+                    fetchDash('/live')
+                ]);
+
+                renderDashKpis(overview);
+                renderDashSurfaces(surfaces);
+                renderDashTopPlayers(players);
+                renderDashRecentEvents(recent);
+                renderDashLiveStatus(live);
+
+                setDashStatus('ok', `Dataset ready &middot; ${fmtNum(overview.kpis?.total_matches || 0)} matches`);
+                if (dashEl('dash-last-refresh')) {
+                    dashEl('dash-last-refresh').innerHTML = fmtDateTime(overview.dataset?.generated_at);
+                }
+            } catch (err) {
+                console.error("Dashboard render failed:", err);
+                setDashStatus('error', `Unable to load data: ${err.message}`);
+            }
+        }
+
+
+
+        // ============================================================
+        // PLAYERS PAGE DATA LAYER (real data from /api/players)
+        // ============================================================
+
+        const PLAYERS_API = '/api/players';
+
+        // Player list returned by GET /api/players (real dataset rows).
+        let playersList = [];
+        let playersLoaded = false;
+
+        // Total number of players reported by GET /api/players ("count").
+        let playersTotal = 0;
+
+        // Player names come from the dataset, so they are escaped before
+        // being placed into <option value="..."> markup.
+        function escapeHtml(value) {
+            return String(value === null || value === undefined ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function playerStatusBadge(state, html) {
+            const meta = document.getElementById('player-header-meta');
+            if (!meta) return;
+
+            const styles = {
+                ok: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                loading: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                error: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            };
+
+            meta.innerHTML = `<span class="px-3 py-1 rounded-full border ${styles[state] || styles.ok}">${html}</span>`;
+        }
+
+        function playerMetaBadge(text, colourClass) {
+            return `<span class="px-3 py-1 rounded-full bg-slate-800 ${colourClass} border border-slate-700">${text}</span>`;
+        }
+
+        function fmtPct(value, digits) {
+            if (value === null || value === undefined || value === '') return '&mdash;';
+            return `${Number(value).toFixed(digits === undefined ? 2 : digits)}%`;
+        }
+
+        // GET /api/players -> fills the existing player selector with every
+        // player of the cleaned dataset (842 today). Nothing is hardcoded:
+        // the options are exactly the rows the backend returns, and a name
+        // guard keeps duplicates out of the list.
+        async function loadPlayersList() {
+            const selector = document.getElementById('player-selector');
+            playerStatusBadge('loading', '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Loading players from backend...');
+
+            const res = await fetch(PLAYERS_API);
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(data.error || `API /api/players responded with status ${res.status}`);
+            }
+
+            const rows = Array.isArray(data.players) ? data.players : [];
+            const seenNames = new Set();
+
+            playersList = rows.filter(p => {
+                const name = p && p.player_name;
+
+                if (!name || seenNames.has(name)) return false;
+
+                seenNames.add(name);
+                return true;
+            });
+
+            playersTotal = Number(data.count) || playersList.length;
+            playersLoaded = true;
+
+            if (selector) {
+                selector.innerHTML = playersList.map(p => {
+                    const name = escapeHtml(p.player_name);
+                    return `<option value="${name}">${name} &middot; ${fmtNum(p.matches)} matches</option>`;
+                }).join('');
+            }
+
+            return playersList;
+        }
+
+        // Retry GET /api/players after a backend failure without leaving the page.
+        async function retryPlayersList() {
+            playersLoaded = false;
+            await renderPlayerAnalysis();
+        }
+
+        // Called by switchTab('player'): load the list on first visit,
+        // then always fetch the selected player's real statistics.
+        async function renderPlayerAnalysis() {
+            const selector = document.getElementById('player-selector');
+
+            try {
+                if (!playersLoaded) {
+                    await loadPlayersList();
+                }
+            } catch (err) {
+                playersLoaded = false;
+                playerStatusBadge('error', `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Backend error: ${err.message} <button onclick="retryPlayersList()" class="ml-2 underline text-emerald-400 hover:text-emerald-300">Retry</button>`);
+                clearPlayerAnalysis();
+                return;
+            }
+
+            if (!playersList.length) {
+                playerStatusBadge('error', 'No players available in the dataset');
+                clearPlayerAnalysis();
+                return;
+            }
+
+            const playerName = (selector && selector.value) || playersList[0].player_name;
+            appState.selectedPlayer = playerName;
+
+            await onPlayerSelected(playerName);
+        }
+
+        // GET /api/players/{player_name} -> get_player_analysis()
+        async function onPlayerSelected(playerName) {
+            appState.selectedPlayer = playerName;
+            playerStatusBadge('loading', `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Loading ${playerName}...`);
+
+            try {
+                const res = await fetch(`${PLAYERS_API}/${encodeURIComponent(playerName)}`);
+                const profile = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(profile.error || `API responded with status ${res.status}`);
+                }
+
+                renderPlayerProfile(profile);
+
+            } catch (err) {
+                playerStatusBadge('error', `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Backend error: ${err.message}`);
+                clearPlayerAnalysis();
+            }
+        }
+
+        // Renders the real payload returned by get_player_analysis().
+        function renderPlayerProfile(p) {
+            const badges = [
+                playerMetaBadge('<i class="fa-solid fa-database mr-1"></i> Live backend data', 'text-emerald-400'),
+                playerMetaBadge(`<i class="fa-solid fa-users mr-1"></i> ${fmtNum(playersTotal)} players in dataset`, 'text-slate-400'),
+                playerMetaBadge(`${fmtNum(p.matches)} Matches Played`, 'text-sky-400'),
+                playerMetaBadge(`${fmtNum(p.wins)} W / ${fmtNum(p.losses)} L`, 'text-slate-200')
+            ];
+
+            if (p.latest_rank !== null && p.latest_rank !== undefined) {
+                badges.push(playerMetaBadge(`Latest Rank #${p.latest_rank}`, 'text-amber-400'));
+            }
+
+            if (p.avg_match_duration !== null && p.avg_match_duration !== undefined) {
+                badges.push(playerMetaBadge(`${p.avg_match_duration} min avg match`, 'text-slate-400'));
+            }
+
+            document.getElementById('player-header-meta').innerHTML = badges.join('');
+
+            // KPI grid - exactly the metrics the backend returns
+            document.getElementById('player-kpi-grid').innerHTML = `
+                <div class="glass-card p-4 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-xs">Win Rate %</span>
+                    <div class="text-2xl font-bold text-emerald-400 mt-1">${fmtPct(p.win_rate)}</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-xs">Total Aces</span>
+                    <div class="text-2xl font-bold text-sky-400 mt-1">${fmtNum(p.total_aces)}</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-xs">1st Serve %</span>
+                    <div class="text-2xl font-bold text-amber-400 mt-1">${fmtPct(p.avg_first_serve_pct)}</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-xs">BP Conversion %</span>
+                    <div class="text-2xl font-bold text-purple-400 mt-1">${fmtPct(p.avg_break_point_conversion)}</div>
+                </div>
+            `;
+
+            // Surface table - real surface_performance rows
+            const surfaces = p.surface_performance || [];
+
+            document.getElementById('player-surface-table-body').innerHTML = surfaces.length
+                ? surfaces.map(s => `
+                    <tr>
+                        <td class="p-3 font-bold text-white">${s.surface}</td>
+                        <td class="p-3">${fmtNum(s.matches)}</td>
+                        <td class="p-3 text-emerald-400">${fmtNum(s.wins)}</td>
+                        <td class="p-3 text-rose-400">${fmtNum(s.losses)}</td>
+                        <td class="p-3 font-bold text-sky-400">${fmtPct(s.win_rate)}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td class="p-3 text-slate-500" colspan="5">No surface performance data for this player.</td></tr>';
+
+            renderPlayerHistoryChart(p.yearly_performance || []);
+            renderPlayerMetricRadar(p);
+        }
+
+        // Line chart built from the real yearly_performance rows. Both the
+        // series and the heading come from the seasons the backend
+        // returned, so the trajectory starts at the player's first real
+        // season and the title can never disagree with the chart.
+        function renderPlayerHistoryChart(yearly) {
+            const heading = document.getElementById('player-history-title');
+
+            const points = (yearly || [])
+                .filter(row => row && row.year !== null && row.year !== undefined)
+                .sort((a, b) => Number(a.year) - Number(b.year));
+
+            if (heading) {
+                heading.innerText = points.length
+                    ? `Performance Trajectory (${points[0].year} - ${points[points.length - 1].year})`
+                    : 'Performance Trajectory';
+            }
+
+            destroyChart('player-history');
+            const ctxHist = document.getElementById('chart-player-history').getContext('2d');
+            activeCharts['player-history'] = new Chart(ctxHist, {
+                type: 'line',
+                data: {
+                    labels: points.map(y => y.year),
+                    datasets: [{
+                        label: 'Win %',
+                        data: points.map(y => Number(Number(y.win_rate).toFixed(2))),
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' }, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+        // Radar built only from metrics the backend actually returns
+        // (win rate, 1st serve %, 1st serve won %, break point conversion).
+        function renderPlayerMetricRadar(p) {
+            const labels = ['Win Rate', '1st Serve %', '1st Serve Won %', 'BP Conversion %'];
+
+            const values = [
+                p.win_rate,
+                p.avg_first_serve_pct,
+                p.avg_first_serve_won_pct,
+                p.avg_break_point_conversion
+            ].map(v => (v === null || v === undefined ? 0 : Number(v)));
+
+            destroyChart('player-radar');
+            const ctxRadar = document.getElementById('chart-player-radar').getContext('2d');
+            activeCharts['player-radar'] = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: p.player,
+                        data: values,
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderColor: '#22c55e',
+                        pointBackgroundColor: '#22c55e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#334155' },
+                            grid: { color: '#1e293b' },
+                            pointLabels: { color: '#cbd5e1', font: { size: 10 } },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Backend failure state: no values are invented.
+        function clearPlayerAnalysis() {
+            const grid = document.getElementById('player-kpi-grid');
+
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="glass-card p-4 rounded-xl border border-slate-800 md:col-span-4">
+                        <span class="text-slate-400 text-xs">Player statistics unavailable</span>
+                        <div class="text-sm text-slate-500 mt-1">No values are shown because the backend request failed.</div>
+                    </div>
+                `;
+            }
+
+            const tbody = document.getElementById('player-surface-table-body');
+
+            if (tbody) {
+                tbody.innerHTML = '<tr><td class="p-3 text-slate-500" colspan="5">Unavailable</td></tr>';
+            }
+
+            destroyChart('player-history');
+            destroyChart('player-radar');
+        }
+
+        // Head-to-Head still uses the in-page demo dataset; the Players
+        // page now reads everything from /api/players.
+        // ============================================================
+        // MATCHES PAGE DATA LAYER (real data from /api/matches)
+        // ============================================================
+
+        const MATCHES_API = '/api/matches';
+
+        // One page of rows per request (the backend caps the size at
+        // MATCH_LIST_MAX_LIMIT), so all 15,980 matches stay browsable
+        // without ever placing them all in the DOM.
+        const MATCH_PAGE_SIZE = 100;
+
+        let matchFilterTimer = null;
+
+        // Current page of the match table, and how many pages the
+        // current filters produce.
+        let matchPage = 1;
+        let matchTotalPages = 1;
+
+        // The dropdowns are filled once, from values that really exist.
+        let matchFiltersLoaded = false;
+
+        // The filter dropdowns are filled from filter_options of
+        // GET /api/matches, so every year, surface and tournament
+        // offered is a real dataset value, none is missing, and the
+        // current selection survives the refresh.
+        function populateMatchFilterOptions(options) {
+            if (!options) return;
+
+            const fill = (selectId, allLabel, values, newestFirst) => {
+                const select = document.getElementById(selectId);
+                if (!select || !Array.isArray(values) || !values.length) return;
+
+                const previous = select.value;
+                const ordered = newestFirst
+                    ? values.slice().sort((a, b) => Number(b) - Number(a))
+                    : values;
+
+                select.innerHTML = `<option value="ALL">${allLabel}</option>` +
+                    ordered.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+                const keepPrevious =
+                    previous && previous !== 'ALL' && ordered.some(v => String(v) === previous);
+
+                select.value = keepPrevious ? previous : 'ALL';
+            };
+
+            fill('match-filter-year', 'All Years', (options.years || []).map(String), true);
+            fill('match-filter-surface', 'All Surfaces', options.surfaces || [], false);
+            fill('match-filter-tournament', 'All Tournaments', options.tournaments || [], false);
+
+            matchFiltersLoaded = true;
+        }
+
+        // Pager state for the match table.
+        function renderMatchPager(data) {
+            const info = document.getElementById('match-page-info');
+            const previous = document.getElementById('match-prev-page');
+            const next = document.getElementById('match-next-page');
+
+            if (info) info.innerText = `Page ${data.page} of ${data.total_pages}`;
+            if (previous) previous.disabled = !data.has_previous_page;
+            if (next) next.disabled = !data.has_next_page;
+        }
+
+        // Called by the Prev / Next buttons.
+        function gotoMatchPage(step) {
+            const target = matchPage + step;
+            if (target < 1 || target > matchTotalPages) return;
+
+            matchPage = target;
+            renderMatchTable();
+            document.getElementById('match-count-badge').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function surfaceBadgeClass(surface) {
+            if (surface === 'Hard') return 'bg-sky-500/20 text-sky-400';
+            if (surface === 'Clay') return 'bg-amber-500/20 text-amber-400';
+            if (surface === 'Grass') return 'bg-emerald-500/20 text-emerald-400';
+            return 'bg-indigo-500/20 text-indigo-400';
+        }
+
+        function matchTableMessage(text, colourClass) {
+            document.getElementById('match-table-body').innerHTML = `
+                <tr>
+                    <td class="p-4 ${colourClass}" colspan="7">${text}</td>
+                </tr>
+            `;
+        }
+
+        // The filter values the Matches page sends to the backend.
+        function matchFilterParams() {
+            const params = new URLSearchParams();
+
+            const year = document.getElementById('match-filter-year').value;
+            const surface = document.getElementById('match-filter-surface').value;
+            const tournament = document.getElementById('match-filter-tournament').value;
+            const search = document.getElementById('match-search-input').value.trim();
+
+            if (year && year !== 'ALL') params.set('year', year);
+            if (surface && surface !== 'ALL') params.set('surface', surface);
+            if (tournament && tournament !== 'ALL') params.set('tournament', tournament);
+            if (search) params.set('search', search);
+
+            params.set('limit', String(MATCH_PAGE_SIZE));
+            params.set('offset', String((matchPage - 1) * MATCH_PAGE_SIZE));
+
+            return params;
+        }
+
+        // The search box fires on every keystroke, so the request waits
+        // briefly before hitting the backend.
+        function onMatchFilterChange() {
+            // Any filter change starts again from the first page.
+            matchPage = 1;
+
+            if (matchFilterTimer) clearTimeout(matchFilterTimer);
+            matchFilterTimer = setTimeout(renderMatchTable, 300);
+        }
+
+        function fmtMetric(value, suffix) {
+            if (value === null || value === undefined || value === '') return 'N/A';
+
+            const number = Number(value);
+            if (Number.isNaN(number)) return 'N/A';
+
+            return suffix === undefined ? String(number) : number.toFixed(1) + suffix;
+        }
+
+        // Called by switchTab('match') and by the filter controls.
+        async function renderMatchTable() {
+            const badge = document.getElementById('match-count-badge');
+
+            badge.className = 'text-xs text-amber-400 font-mono';
+            badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading matches from backend...';
+            matchTableMessage('Loading matches from backend...', 'text-slate-400');
+
+            try {
+                const res = await fetch(`${MATCHES_API}?${matchFilterParams().toString()}`);
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(data.error || `API /api/matches responded with status ${res.status}`);
+                }
+
+                const matches = data.matches || [];
+
+                if (!matchFiltersLoaded) populateMatchFilterOptions(data.filter_options);
+
+                matchPage = Number(data.page) || matchPage;
+                matchTotalPages = Number(data.total_pages) || 1;
+                renderMatchPager(data);
+
+                badge.className = 'text-xs text-slate-400 font-mono';
+                badge.innerText = `Showing ${data.count} of ${data.total_count} matches`;
+
+                if (!matches.length) {
+                    matchTableMessage('No matches found for these filters.', 'text-slate-500');
+                    return;
+                }
+
+                document.getElementById('match-table-body').innerHTML = matches.map(m => `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3.5 text-slate-400">${m.year}</td>
+                        <td class="p-3.5 font-bold text-white">${m.tourney_name}</td>
+                        <td class="p-3.5">
+                            <span class="px-2 py-0.5 rounded text-[10px] ${surfaceBadgeClass(m.surface)}">${m.surface || 'N/A'}</span>
+                        </td>
+                        <td class="p-3.5 font-bold text-emerald-400">${m.winner_name}</td>
+                        <td class="p-3.5 text-slate-300">${m.loser_name}</td>
+                        <td class="p-3.5 text-slate-300">${m.score}</td>
+                        <td class="p-3.5 text-right">
+                            <button onclick="openMatchModal('${m.match_id}')" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold text-[11px] border border-slate-700 transition">
+                                <i class="fa-solid fa-chart-simple mr-1"></i> Inspect
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                badge.className = 'text-xs text-rose-400 font-mono';
+                badge.innerText = 'Backend error';
+                matchTableMessage(`Backend error: ${err.message}`, 'text-rose-400');
+
+                const pageInfo = document.getElementById('match-page-info');
+                if (pageInfo) pageInfo.innerText = 'Page unavailable';
+
+                ['match-prev-page', 'match-next-page'].forEach(id => {
+                    const button = document.getElementById(id);
+                    if (button) button.disabled = true;
+                });
+            }
+        }
+
+        // GET /api/matches/{match_id} -> get_match_details()
+        async function openMatchModal(matchId) {
+            const badge = document.getElementById('modal-tournament-badge');
+            const title = document.getElementById('modal-match-title');
+            const score = document.getElementById('modal-match-score');
+            const stats = document.getElementById('modal-stats-container');
+
+            badge.innerText = 'Loading...';
+            title.innerText = matchId;
+            score.innerText = 'Fetching real match data...';
+            stats.innerHTML = '<div class="p-3 rounded bg-slate-900 border border-slate-800 text-slate-400">Loading match details from the backend...</div>';
+
+            document.getElementById('match-modal').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${MATCHES_API}/${encodeURIComponent(matchId)}`);
+                const m = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(m.error || `API responded with status ${res.status}`);
+                }
+
+                badge.innerText = `${m.tournament} (${m.year}) - ${m.surface}`;
+                title.innerText = `${m.winner} d. ${m.loser}`;
+                score.innerText = (m.duration === null || m.duration === undefined)
+                    ? `Final Score: ${m.score}`
+                    : `Final Score: ${m.score} \u00b7 ${fmtMetric(m.duration)} min`;
+
+                stats.innerHTML = `
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 font-bold border border-slate-800 text-slate-300">
+                        <span class="text-emerald-400">${m.winner}</span>
+                        <span class="text-slate-500">Metric</span>
+                        <span class="text-rose-400">${m.loser}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 border border-slate-800/80">
+                        <span class="font-bold text-white">${fmtMetric(m.winner_aces)}</span>
+                        <span class="text-slate-400">Aces</span>
+                        <span class="font-bold text-white">${fmtMetric(m.loser_aces)}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 border border-slate-800/80">
+                        <span class="font-bold text-white">${fmtMetric(m.winner_double_faults)}</span>
+                        <span class="text-slate-400">Double Faults</span>
+                        <span class="font-bold text-white">${fmtMetric(m.loser_double_faults)}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 border border-slate-800/80">
+                        <span class="font-bold text-white">${fmtMetric(m.winner_first_serve_pct, '%')}</span>
+                        <span class="text-slate-400">1st Serve %</span>
+                        <span class="font-bold text-white">${fmtMetric(m.loser_first_serve_pct, '%')}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 border border-slate-800/80">
+                        <span class="font-bold text-white">${fmtMetric(m.winner_first_serve_won_pct, '%')}</span>
+                        <span class="text-slate-400">1st Serve Won %</span>
+                        <span class="font-bold text-white">${fmtMetric(m.loser_first_serve_won_pct, '%')}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center p-2 rounded bg-slate-900 border border-slate-800/80">
+                        <span class="font-bold text-emerald-400">${fmtMetric(m.winner_bp_conversion, '%')}</span>
+                        <span class="text-slate-400">BP Conversion %</span>
+                        <span class="font-bold text-rose-400">${fmtMetric(m.loser_bp_conversion, '%')}</span>
+                    </div>
+                `;
+
+            } catch (err) {
+                badge.innerText = 'Unavailable';
+                title.innerText = matchId;
+                score.innerText = 'No data';
+                stats.innerHTML = `
+                    <div class="p-3 rounded bg-slate-900 border border-rose-500/30 text-rose-400">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Backend error: ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        function closeMatchModal() {
+            document.getElementById('match-modal').classList.add('hidden');
+        }
+
+        // ============================================================
+        // HEAD-TO-HEAD PAGE DATA LAYER (real data from /api/head-to-head)
+        // ============================================================
+
+        const HEAD_TO_HEAD_API = '/api/head-to-head';
+
+        // Only the newest selection may paint the page.
+        let h2hRequestId = 0;
+
+        // Both dropdowns reuse the player list already loaded for the
+        // Players page (GET /api/players), so there is no second player
+        // dataset and no demo players in this section.
+        function populateH2HPlayerOptions() {
+            const select1 = document.getElementById('h2h-player1');
+            const select2 = document.getElementById('h2h-player2');
+
+            if (!select1 || !select2 || !playersList.length) return;
+
+            const previous1 = select1.value;
+            const previous2 = select2.value;
+            const names = playersList.map(p => p.player_name);
+
+            const optionsHTML = names.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join('');
+
+            select1.innerHTML = optionsHTML;
+            select2.innerHTML = optionsHTML;
+
+            const first = names.find(name => name !== previous2) || names[0];
+            const second = names.find(name => name !== first) || names[1] || names[0];
+
+            select1.value = names.includes(previous1) ? previous1 : first;
+            select2.value = names.includes(previous2) && previous2 !== select1.value
+                ? previous2
+                : second;
+        }
+
+        // Shared empty / error / loading state, so nothing is invented.
+        function h2hMessageCard(html) {
+            return `<div class="text-center text-sm text-slate-400 py-8">${html}</div>`;
+        }
+
+        function h2hClearTables() {
+            const meetings = document.getElementById('h2h-matches-body');
+            const surfaces = document.getElementById('h2h-surface-table-body');
+
+            if (meetings) meetings.innerHTML = '';
+            if (surfaces) surfaces.innerHTML = '';
+        }
+
+        // Called by switchTab('h2h') and by the two dropdowns. Every
+        // value below is taken from the backend response: the page never
+        // calculates wins, totals or surface statistics itself.
+        async function renderH2H() {
+            const select1 = document.getElementById('h2h-player1');
+            const select2 = document.getElementById('h2h-player2');
+
+            if (!playersLoaded) {
+                try {
+                    await loadPlayersList();
+                } catch (err) {
+                    h2hClearTables();
+                    document.getElementById('h2h-hero-card').innerHTML = h2hMessageCard(
+                        `<span class="text-rose-400">Could not load the player list: ${escapeHtml(err.message)}</span>`
+                    );
+                    return;
+                }
+            }
+
+            populateH2HPlayerOptions();
+
+            const player1 = select1.value;
+            const player2 = select2.value;
+
+            if (!player1 || !player2) {
+                h2hClearTables();
+                document.getElementById('h2h-hero-card').innerHTML = h2hMessageCard(
+                    'Please select two players.'
+                );
+                return;
+            }
+
+            if (player1 === player2) {
+                h2hClearTables();
+                document.getElementById('h2h-hero-card').innerHTML = h2hMessageCard(
+                    'Please select two different players.'
+                );
+                return;
+            }
+
+            const requestId = ++h2hRequestId;
+
+            document.getElementById('h2h-th-p1').innerText = `${player1} Wins`;
+            document.getElementById('h2h-th-p2').innerText = `${player2} Wins`;
+            h2hClearTables();
+            document.getElementById('h2h-hero-card').innerHTML = h2hMessageCard(
+                '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading head-to-head from backend...'
+            );
+
+            try {
+                const params = new URLSearchParams({ player1, player2 });
+                const res = await fetch(`${HEAD_TO_HEAD_API}?${params.toString()}`);
+                const data = await res.json().catch(() => ({}));
+
+                if (requestId !== h2hRequestId) return;
+
+                if (!res.ok) {
+                    throw new Error(data.error || `API responded with status ${res.status}`);
+                }
+
+                renderH2HResult(data);
+
+            } catch (err) {
+                if (requestId !== h2hRequestId) return;
+
+                h2hClearTables();
+                document.getElementById('h2h-hero-card').innerHTML = h2hMessageCard(
+                    `<span class="text-rose-400">Backend error: ${escapeHtml(err.message)}</span>`
+                );
+            }
+        }
+        // Renders exactly what GET /api/head-to-head returned.
+        function renderH2HResult(data) {
+            const hero = document.getElementById('h2h-hero-card');
+            const matches = data.matches || [];
+            const surfaces = data.surface_breakdown || [];
+
+            if (!data.total_matches) {
+                h2hClearTables();
+                hero.innerHTML = h2hMessageCard(
+                    'No recorded meetings between these players in the 2019-2024 dataset.'
+                );
+                return;
+            }
+
+            const player1Wins = data.player1_wins;
+            const player2Wins = data.player2_wins;
+            const total = data.total_matches;
+            const player1Share = Math.round((player1Wins / total) * 100);
+
+            hero.innerHTML = `
+                <div class="flex items-center justify-between text-center font-mono">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400">PLAYER 1</span>
+                        <h3 class="text-xl font-bold text-emerald-400">${escapeHtml(data.player1)}</h3>
+                        <div class="text-3xl font-extrabold text-white">${fmtNum(player1Wins)}</div>
+                        <span class="text-xs text-slate-500 block">${fmtPct(data.player1_win_rate)} win rate</span>
+                    </div>
+
+                    <div class="text-center">
+                        <span class="text-xs text-slate-500 block">TOTAL MEETINGS</span>
+                        <span class="text-2xl font-black text-amber-400">${fmtNum(total)}</span>
+                        <span class="text-xs text-slate-500 block">HEAD-TO-HEAD ${fmtNum(player1Wins)} - ${fmtNum(player2Wins)}</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400">PLAYER 2</span>
+                        <h3 class="text-xl font-bold text-sky-400">${escapeHtml(data.player2)}</h3>
+                        <div class="text-3xl font-extrabold text-white">${fmtNum(player2Wins)}</div>
+                        <span class="text-xs text-slate-500 block">${fmtPct(data.player2_win_rate)} win rate</span>
+                    </div>
+                </div>
+
+                <div class="w-full bg-slate-900 rounded-full h-4 overflow-hidden flex border border-slate-800">
+                    <div style="width: ${player1Share}%" class="bg-emerald-500 h-full flex items-center justify-center text-[10px] font-bold text-slate-950">${player1Share}%</div>
+                    <div style="width: ${100 - player1Share}%" class="bg-sky-500 h-full flex items-center justify-center text-[10px] font-bold text-slate-950">${100 - player1Share}%</div>
+                </div>
+
+                <p class="text-xs text-slate-500 text-center">
+                    Real meetings from the cleaned dataset, newest first.
+                </p>
+            `;
+
+            document.getElementById('h2h-matches-body').innerHTML = matches.map(m => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 font-bold text-white">${escapeHtml(m.tournament)}</td>
+                    <td class="p-3.5 text-slate-400">${escapeHtml(m.year)}</td>
+                    <td class="p-3.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] ${surfaceBadgeClass(m.surface)}">${escapeHtml(m.surface || 'N/A')}</span>
+                    </td>
+                    <td class="p-3.5 text-slate-400">${escapeHtml(m.round || 'N/A')}</td>
+                    <td class="p-3.5 font-bold ${m.winner === data.player1 ? 'text-emerald-400' : 'text-sky-400'}">${escapeHtml(m.winner)}</td>
+                    <td class="p-3.5 text-slate-300">${escapeHtml(m.score)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('h2h-surface-table-body').innerHTML = surfaces.map(s => `
+                <tr>
+                    <td class="p-3 font-bold text-white">${escapeHtml(s.surface)}</td>
+                    <td class="p-3 text-slate-400">${fmtNum(s.matches)}</td>
+                    <td class="p-3 text-emerald-400 font-bold">${fmtNum(s.player1_wins)}</td>
+                    <td class="p-3 text-sky-400 font-bold">${fmtNum(s.player2_wins)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function destroyChart(chartKey) {
+            if (activeCharts[chartKey]) {
+                activeCharts[chartKey].destroy();
+                delete activeCharts[chartKey];
+            }
+        }
+
+        window.onload = function() {
+            switchTab('landing');
+        };
+    </script>
+</body>
+</html>

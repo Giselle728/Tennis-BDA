@@ -1194,3 +1194,21 @@ curl http://127.0.0.1:8000/api/health
     scaling would require a multi-node cluster and partitioned loaders.
 12. **The Streamlit view depends on the generated JSON file**, which is git-ignored, so a fresh
     clone must re-run the historical stream pipeline before using `dashboard/app.py`.
+
+## 📸 Project Outputs
+
+### Dashboard
+<img width="1440" height="809" alt="Screenshot 2026-10-03 at 10 19 21 PM" src="https://github.com/user-attachments/assets/0a7385bf-2061-4744-9369-e4a402ca6672" />
+
+### Player Analytics
+<img width="1431" height="808" alt="Screenshot 2026-10-03 at 10 20 00 PM" src="https://github.com/user-attachments/assets/f0e12c10-ffb7-4430-b129-4c382ca008b4" />
+
+### Players Analytics 
+<img width="1440" height="810" alt="Screenshot 2026-10-03 at 10 20 35 PM" src="https://github.com/user-attachments/assets/edb3e429-a9a2-43a4-bc4b-c49b743c5a0d" />
+
+
+### Matches Analytics
+<img width="1428" height="808" alt="Screenshot 2026-10-03 at 10 21 07 PM" src="https://github.com/user-attachments/assets/9610b3a5-76cd-4671-8d84-5f8525966e07" />
+
+### Player VS Player Analytics
+<img width="1440" height="811" alt="Screenshot 2026-10-03 at 10 22 15 PM" src="https://github.com/user-attachments/assets/06803aad-19d8-4750-9947-7b5312bbf88d" />
